@@ -1,14 +1,23 @@
+from operator import index
 from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def get_letters():
-    return jsonify({"hello": "test"})
+selectedLetters = ["E","N","G","I","R"]
+selectedIndecies = [1, 1, 2, 0, 0]    # Keeps track of what state each letter prompt is in. 
+                                                        # (true - guessed correctly, false - guessed incorrectly, 
+                                                        # first false - pending)
 
-@app.route("/test", methods=["GET"])
-def set_letters():
-    return jsonify({"test": "test2"})
+@app.route("/", methods=["GET"])
+def sign_in():
+    return jsonify({"hello": "world"})
+
+@app.route("/getState", methods=["GET"])
+def get_letters():
+    state = []
+    for index in range(len(selectedIndecies)):
+        state.append({selectedLetters[index]: selectedIndecies[index]})
+    return jsonify(state)
 
 if __name__ == "__main__":
     app.run(debug= True)
