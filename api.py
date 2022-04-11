@@ -19,5 +19,14 @@ def get_letters():
         "selectedIndecies": selectedIndecies
     })
 
+
+@app.route("/clearState", methods=["POST"])
+def clear_letters():
+    selectedIndecies = [2, 0, 0, 0, 0]
+    return jsonify({
+        "selectedLetters": selectedLetters,
+        "selectedIndecies": selectedIndecies
+    })
+
 if __name__ == "__main__":
     app.run(debug= True)
