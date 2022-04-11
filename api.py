@@ -14,10 +14,10 @@ def sign_in():
 
 @app.route("/getState", methods=["GET"])
 def get_letters():
-    state = []
-    for index in range(len(selectedIndecies)):
-        state.append({selectedLetters[index]: selectedIndecies[index]})
-    return jsonify(state)
+    return jsonify({
+        "selectedLetters": selectedLetters,
+        "selectedIndecies": selectedIndecies
+    })
 
 if __name__ == "__main__":
     app.run(debug= True)
