@@ -1,7 +1,10 @@
+from glob import glob
 from operator import index
 from flask import Flask, jsonify
 
 app = Flask(__name__)
+
+global selectedLetters, selectedIndecies
 
 selectedLetters = ["E","N","G","I","R"]
 selectedIndecies = [1, 1, 2, 0, 0]    # Keeps track of what state each letter prompt is in. 
@@ -14,6 +17,7 @@ def sign_in():
 
 @app.route("/getState", methods=["GET"])
 def get_letters():
+    global selectedIndecies
     return jsonify({
         "selectedLetters": selectedLetters,
         "selectedIndecies": selectedIndecies
@@ -22,7 +26,8 @@ def get_letters():
 
 @app.route("/clearState", methods=["POST"])
 def clear_letters():
-    selectedIndecies = [2, 0, 0, 0, 0]
+    global selectedIndecies
+    selectedIndecies = [2,0,0,0,0]
     return jsonify({
         "selectedLetters": selectedLetters,
         "selectedIndecies": selectedIndecies
