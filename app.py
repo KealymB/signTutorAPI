@@ -13,14 +13,12 @@ app = Flask(__name__)
 
 global selectedLetters, selectedIndecies
 
-selectedLetters = ["E","N","G","I","R"]
-selectedIndecies = [1, 1, 2, 0, 0]    # Keeps track of what state each letter prompt is in. 
-                                                        # (true - guessed correctly, false - guessed incorrectly, 
-                                                        # first false - pending)
+letterSet = ["E","N","G","I","R"]
+currLetter = 0   # Keeps track of letter state -1 means no letter gotten
 
 img_height = 224
 img_width = 224
-class_names = ['E', 'G', 'I', 'N', 'R']  
+class_names = ['E', 'G', 'I', 'N', 'R']  # Different order of letters for clasiffier
 
 # load model
 sign_model = tf.keras.models.load_model('ASL_MODEL_V1.h5')
@@ -32,25 +30,25 @@ def sign_in():
 
 @app.route("/getState", methods=["GET"])
 def get_letters():
-    global selectedIndecies
+    global letterSet, currLetter
     return jsonify({
-        "selectedLetters": selectedLetters,
-        "selectedIndecies": selectedIndecies
+        "letterSet": letterSet,
+        "currLetter": currLetter
     })
 
 
 @app.route("/clearState", methods=["POST"])
 def clear_letters():
-    global selectedIndecies
-    selectedIndecies = [2,0,0,0,0]
+    global letterSet, currLetter
+    currLetter = 0
     return jsonify({
-        "selectedLetters": selectedLetters,
-        "selectedIndecies": selectedIndecies
+        "letterSet": letterSet,
+        "currLetter": currLetter
     })
 
 @app.route("/makeGuess", methods=["POST"])
 def guess_letter():
-    global selectedIndecies
+    global letterSet, currLetter
     base64String = request.form.to_dict()["base64Image"]
 
     # Assuming base64_str is the string value without 'data:image/jpeg;base64,'
@@ -71,21 +69,19 @@ def guess_letter():
         .format(class_names[np.argmax(score)], 100 * np.max(score))
     )
 
-    # test image in ML get back a confidence and then adjust state...
-    # will just say its correct to test the rest of the API
-    guess = True
+    guess = False
+
+    if letterSet[currLetter] == class_names[np.argmax(score)]:
+        guess = True    
 
     if(guess):
-        
-        index = selectedIndecies.index(2)
-        if(index < len(selectedIndecies) -1):
-            selectedIndecies[index] = 1
-            selectedIndecies[index+1] = 2
+        if currLetter < len(letterSet):
+            currLetter = currLetter + 1
         else:
-            clear_letters()
+            currLetter = 0
     return jsonify({
-        "selectedLetters": selectedLetters,
-        "selectedIndecies": selectedIndecies
+        "letterSet": letterSet,
+        "currLetter": currLetter
     })
 
 if __name__ == "__main__":
