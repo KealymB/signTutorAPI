@@ -1,17 +1,25 @@
 import io, base64
+import os
 from PIL import Image
+import datetime
 
 from glob import glob
 from operator import index
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+
 app = Flask(__name__)
 
 global selectedLetters, selectedIndecies
+
+# Folder paths for google drive
+folderIDs = ['1O2U1TNVKJsp-OegBNGhx1OdwzwNZk9MS', '1Dtnxl49VY_jm_sxs3StN-UR8yYSDl3R9', '12UPEM8dlap-66JlLdVEF95z5kZ_bycn7', '1WU5CEWAQhfDD7PIDYfy3mMmILKNdZdLw', '1q0GvikjqHZl3rsOVSXq-r-i_GMAyqFd3']
 
 letterSet = ["E","N","G","I","R"]
 currLetter = 0   # Keeps track of letter state -1 means no letter gotten
@@ -23,6 +31,29 @@ class_names = ['E', 'G', 'I', 'N', 'R']  # Different order of letters for clasif
 # load model
 sign_model = tf.keras.models.load_model('ASL_MODEL_V1.h5')
 
+# start google drive connection
+gauth = GoogleAuth()           
+gauth = GoogleAuth()
+# Try to load saved client credentials
+gauth.LoadCredentialsFile("mycreds.txt")
+if gauth.credentials is None:
+    # Authenticate if they're not there
+    gauth.LocalWebserverAuth()
+elif gauth.access_token_expired:
+    # Refresh them if expired
+    gauth.Refresh()
+else:
+    # Initialize the saved creds
+    gauth.Authorize()
+# Save the current credentials to a file
+gauth.SaveCredentialsFile("mycreds.txt")
+
+drive = GoogleDrive(gauth)
+
+# add favicon so warning isnt there
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
 
 @app.route("/", methods=["GET"])
 def sign_in():
@@ -60,6 +91,13 @@ def guess_letter():
     )
     img_array = tf.keras.utils.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0) # Create a batch
+
+            # save to google drive
+    # gfile = drive.CreateFile({'title': letterSet[currLetter] + '.jpg'})
+    gfile = drive.CreateFile({'parents': [{'id': folderIDs[currLetter]}]})
+    gfile.SetContentFile("testImage.jpg")
+    gfile['title'] = letterSet[currLetter] + str(datetime.datetime.now()) + '.jpg'
+    gfile.Upload() # Upload the file.
 
     predictions = sign_model.predict(img_array)
     score = tf.nn.softmax(predictions[0])
