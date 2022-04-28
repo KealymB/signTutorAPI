@@ -1,5 +1,4 @@
 import io, base64
-import os
 from PIL import Image
 import datetime
 
