@@ -76,7 +76,7 @@ def get_letters():
         "letterSet": letterSet,
     })
 
-@app.route("/getWordSet", methods=["GET"])
+@app.route("/getWordSet", methods=["POST"])
 def get_word():
     global wordSet
     difficulty = request.form.to_dict()["difficulty"]
