@@ -1,4 +1,5 @@
 import io, base64
+import random
 from PIL import Image
 import datetime
 
@@ -18,10 +19,20 @@ app = Flask(__name__)
 global selectedLetters, selectedIndecies
 
 # Folder paths for google drive
-folderIDs = ['1O2U1TNVKJsp-OegBNGhx1OdwzwNZk9MS', '1Dtnxl49VY_jm_sxs3StN-UR8yYSDl3R9', '12UPEM8dlap-66JlLdVEF95z5kZ_bycn7', '1WU5CEWAQhfDD7PIDYfy3mMmILKNdZdLw', '1q0GvikjqHZl3rsOVSXq-r-i_GMAyqFd3']
+folderIDs = {
+            "E": '1O2U1TNVKJsp-OegBNGhx1OdwzwNZk9MS', 
+            "N": '1Dtnxl49VY_jm_sxs3StN-UR8yYSDl3R9', 
+            "G": '12UPEM8dlap-66JlLdVEF95z5kZ_bycn7', 
+            "I": '1WU5CEWAQhfDD7PIDYfy3mMmILKNdZdLw', 
+            "R": '1q0GvikjqHZl3rsOVSXq-r-i_GMAyqFd3'
+            }
 
 letterSet = ["E","N","G","I","R"]
-currLetter = 0   # Keeps track of letter state -1 means no letter gotten
+wordSet = {
+    "hard": ["ENGINEERING", "ENGINEER", "REIGN"],
+    "medium": ["RINE", "GRIN", "RING"],
+    "easy": ["RIG", "EGG", "ENG"]
+}
 
 img_height = 224
 img_width = 224
@@ -58,28 +69,26 @@ def favicon():
 def sign_in():
     return jsonify({"hello": "world"})
 
-@app.route("/getState", methods=["GET"])
+@app.route("/getLetterSet", methods=["GET"])
 def get_letters():
-    global letterSet, currLetter
+    global letterSet
     return jsonify({
         "letterSet": letterSet,
-        "currLetter": currLetter
     })
 
+@app.route("/getWordSet", methods=["GET"])
+def get_word():
+    global wordSet
+    difficulty = request.form.to_dict()["difficulty"]
 
-@app.route("/clearState", methods=["POST"])
-def clear_letters():
-    global letterSet, currLetter
-    currLetter = 0
     return jsonify({
-        "letterSet": letterSet,
-        "currLetter": currLetter
+        "word": wordSet[difficulty][random.randint(0, len(wordSet[difficulty])-1)],
     })
 
-@app.route("/makeGuess", methods=["POST"])
+@app.route("/predictLetter", methods=["POST"])
 def guess_letter():
-    global letterSet, currLetter
     base64String = request.form.to_dict()["base64Image"]
+    letter = request.form.to_dict()["currLetter"]
 
     # Assuming base64_str is the string value without 'data:image/jpeg;base64,'
     img = Image.open(io.BytesIO(base64.decodebytes(bytes(base64String, "utf-8"))))
@@ -91,11 +100,11 @@ def guess_letter():
     img_array = tf.keras.utils.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0) # Create a batch
 
-            # save to google drive
-    # gfile = drive.CreateFile({'title': letterSet[currLetter] + '.jpg'})
-    gfile = drive.CreateFile({'parents': [{'id': folderIDs[currLetter]}]})
+    # save to google drive
+    gfile = drive.CreateFile({'parents': [{'id': folderIDs[letter]}]})
+
     gfile.SetContentFile("testImage.jpg")
-    gfile['title'] = letterSet[currLetter] + str(datetime.datetime.now()) + '.jpg'
+    gfile['title'] = letter + str(datetime.datetime.now()) + '.jpg'
     gfile.Upload() # Upload the file.
 
     predictions = sign_model.predict(img_array)
@@ -106,19 +115,9 @@ def guess_letter():
         .format(class_names[np.argmax(score)], 100 * np.max(score))
     )
 
-    guess = False
-
-    if letterSet[currLetter] == class_names[np.argmax(score)]:
-        guess = True    
-
-    if(guess):
-        if currLetter < len(letterSet):
-            currLetter = currLetter + 1
-        else:
-            currLetter = 0
     return jsonify({
-        "letterSet": letterSet,
-        "currLetter": currLetter
+        "letterPredicted": class_names[np.argmax(score)],
+        "confidence": 100 * np.max(score)
     })
 
 if __name__ == "__main__":
