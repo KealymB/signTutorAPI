@@ -34,6 +34,11 @@ wordSet = {
     "easy": ["RIG", "EGG", "ENG"]
 }
 
+# score dictionary
+scores = [
+    {"name": "test", "score": 10}
+]
+
 img_height = 224
 img_width = 224
 class_names = ['E', 'G', 'I', 'N', 'R']  # Different order of letters for clasiffier
@@ -68,6 +73,23 @@ def favicon():
 @app.route("/", methods=["GET"])
 def sign_in():
     return jsonify({"hello": "world"})
+
+@app.route("/getScores", methods=["GET"])
+def get_scores():
+    global scores
+    return jsonify({
+        "scores": scores,
+    })
+
+@app.route("/addScore", methods=["POST"])
+def add_score():
+    global scores
+    name = request.form.to_dict()["name"]
+    score = int(request.form.to_dict()["score"])
+    scores.append({"name": name, "score": score})
+    return jsonify({
+        "scores": scores,
+    })
 
 @app.route("/getLetterSet", methods=["GET"])
 def get_letters():
