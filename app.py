@@ -1,4 +1,5 @@
 import io, base64
+from multiprocessing.sharedctypes import Value
 import random
 from PIL import Image
 import datetime
@@ -13,6 +14,7 @@ import numpy as np
 
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+import werkzeug
 
 app = Flask(__name__)
 
@@ -76,20 +78,37 @@ def sign_in():
 
 @app.route("/getScores", methods=["GET"])
 def get_scores():
-    global scores
+    scores = []
+    scoreFile = open("scores.txt","r")
+
+    for line in scoreFile.readlines():
+        if(line):
+            name = line.split(":")[0]
+            score = line.split(":")[1].replace("\n", "")
+            scores.append({"name": name, "score": int(score)})
+
+    scoreFile.close()
+
     return jsonify({
         "scores": scores,
     })
 
 @app.route("/addScore", methods=["POST"])
 def add_score():
-    global scores
-    name = request.form.to_dict()["name"]
-    score = int(request.form.to_dict()["score"])
-    scores.append({"name": name, "score": score})
-    return jsonify({
-        "scores": scores,
-    })
+    name = request.form.to_dict()["name"].replace(":", "").replace("\\", "") # just for a little bit of safety
+    try:
+        score = int(request.form.to_dict()["score"].replace(":", "").replace("\\", ""))
+
+        scoreFile = open("scores.txt","a")
+        scoreFile.write(f"{name}:{score}\n")
+        scoreFile.close()
+    except ValueError:
+        return jsonify({
+            "error": 200,
+            "description": "Name or score supplied is incorrect type."
+        })
+
+    return get_scores()
 
 @app.route("/getLetterSet", methods=["GET"])
 def get_letters():
