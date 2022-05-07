@@ -49,8 +49,8 @@ class_names = ['E', 'G', 'I', 'N', 'R']  # Different order of letters for clasif
 sign_model = tf.keras.models.load_model('ASL_MODEL_V1.h5')
 
 # start google drive connection
-gauth = GoogleAuth()           
-gauth = GoogleAuth()
+gauth = GoogleAuth()      
+     
 # Try to load saved client credentials
 gauth.LoadCredentialsFile("mycreds.txt")
 if gauth.credentials is None:
