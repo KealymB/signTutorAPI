@@ -50,20 +50,24 @@ sign_model = tf.keras.models.load_model('ASL_MODEL_V1.h5')
 
 # start google drive connection
 gauth = GoogleAuth()      
+saveToDrive = True
      
 # Try to load saved client credentials
-gauth.LoadCredentialsFile("mycreds.txt")
-if gauth.credentials is None:
-    # Authenticate if they're not there
-    gauth.LocalWebserverAuth()
-elif gauth.access_token_expired:
-    # Refresh them if expired
-    gauth.Refresh()
-else:
-    # Initialize the saved creds
-    gauth.Authorize()
-# Save the current credentials to a file
-gauth.SaveCredentialsFile("mycreds.txt")
+try:
+    gauth.LoadCredentialsFile("mycreds.txt")
+    if gauth.credentials is None:
+        # Authenticate if they're not there
+        gauth.LocalWebserverAuth()
+    elif gauth.access_token_expired:
+        # Refresh them if expired
+        gauth.Refresh()
+    else:
+        # Initialize the saved creds
+        gauth.Authorize()
+    # Save the current credentials to a file
+    gauth.SaveCredentialsFile("mycreds.txt")
+except:
+    saveToDrive = False
 
 drive = GoogleDrive(gauth)
 
@@ -141,12 +145,13 @@ def guess_letter():
     img_array = tf.keras.utils.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0) # Create a batch
 
-    # save to google drive
-    gfile = drive.CreateFile({'parents': [{'id': folderIDs[letter]}]})
+    # save to google drive if i am authorized
+    if saveToDrive: 
+        gfile = drive.CreateFile({'parents': [{'id': folderIDs[letter]}]})
 
-    gfile.SetContentFile("testImage.jpg")
-    gfile['title'] = letter + str(datetime.datetime.now()) + '.jpg'
-    gfile.Upload() # Upload the file.
+        gfile.SetContentFile("testImage.jpg")
+        gfile['title'] = letter + str(datetime.datetime.now()) + '.jpg'
+        gfile.Upload() # Upload the file.
 
     predictions = sign_model.predict(img_array)
     score = tf.nn.softmax(predictions[0])
