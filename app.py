@@ -54,18 +54,7 @@ saveToDrive = True
      
 # Try to load saved client credentials
 try:
-    gauth.LoadCredentialsFile("mycreds.txt")
-    if gauth.credentials is None:
-        # Authenticate if they're not there
-        gauth.LocalWebserverAuth()
-    elif gauth.access_token_expired:
-        # Refresh them if expired
-        gauth.Refresh()
-    else:
-        # Initialize the saved creds
-        gauth.Authorize()
-    # Save the current credentials to a file
-    gauth.SaveCredentialsFile("mycreds.txt")
+    gauth.LocalWebserverAuth()
 except:
     saveToDrive = False
 
@@ -152,6 +141,8 @@ def guess_letter():
         gfile.SetContentFile("testImage.jpg")
         gfile['title'] = letter + str(datetime.datetime.now()) + '.jpg'
         gfile.Upload() # Upload the file.
+    else:
+        print("save disabled")
 
     predictions = sign_model.predict(img_array)
     score = tf.nn.softmax(predictions[0])
